@@ -589,10 +589,18 @@ func New(e *echo.Echo, dir string) error {
 					repoPath = "/"+path.Join(reqParts[:i]...)
 				}
 
+				head, err := r.Head()
+				if err != nil {
+					return (err)
+				}
+
+				currentHead := head.Name().Short()
+
 				req.URL.Path = "/" + path.Join(reqParts[i:]...)
 				c.Set("repo", r)
 				c.Set("repo-name", parts[len(dirParts)+i-1])
 				c.Set("repo-path", repoPath)
+				c.Set("current-head", currentHead)
 				return next(c)
 			}
 
@@ -603,7 +611,7 @@ func New(e *echo.Echo, dir string) error {
 	s := &server{}
 
 	e.GET("/", func(c echo.Context) error {
-		return s.tree(c, "master", "/")
+		return s.tree(c, c.Get("current-head").(string), "/")
 	})
 	e.GET("/tree/:ref", func(c echo.Context) error {
 		return s.tree(c, c.Param("ref"), "")
